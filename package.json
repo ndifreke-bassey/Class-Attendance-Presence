@@ -1,0 +1,20 @@
+{
+  "name": "presence-campus",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Lecturer-led class attendance prototype",
+  "scripts": {
+    "start": "node server.js",
+    "test": "node --test"
+  },
+  "dependencies": {
+    "exceljs": "^4.4.0",
+    "pdfkit": "^0.20.2",
+    "qrcode-generator": "^2.0.4"
+  },
+  "overrides": {
+    "exceljs": {
+      "uuid": "^11.1.1"
+    }
+  }
+}

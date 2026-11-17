@@ -1,0 +1,130 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+    <meta name="theme-color" content="#f6f8fb">
+    <meta name="description" content="Lecturer-led class roster and attendance check-in.">
+    <title>Presence — Class attendance</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="/styles.css">
+    <script defer src="/theme.js"></script>
+    <script defer src="/vendor/qrcode.js"></script>
+    <script defer src="/app.js"></script>
+  </head>
+  <body>
+    <div class="shell">
+      <header class="topbar">
+        <a class="brand" href="/" aria-label="Presence home">
+          <span class="brand-mark" aria-hidden="true"><svg viewBox="0 0 32 32"><path d="M7 16.5 13 22l12-13"/><circle cx="16" cy="16" r="14"/></svg></span>
+          <span>presence<span class="brand-period">.</span></span>
+        </a>
+        <div class="topbar-end"><span class="prototype-tag"><i></i> Lecturer</span><span class="lecturer-avatar" id="lecturer-avatar" hidden>L</span><span class="lecturer-name" id="lecturer-name" hidden>Lecturer</span><button class="theme-toggle" type="button" data-theme-toggle aria-label="Switch to dark mode"><span data-theme-icon aria-hidden="true">☾</span><span data-theme-label>Dark</span></button><button class="logout-button" id="logout-button" type="button" hidden>Sign out</button></div>
+      </header>
+
+      <main class="page">
+        <section class="auth-view" id="auth-view" hidden>
+          <form class="panel auth-panel" id="auth-form">
+            <span class="auth-mark" aria-hidden="true"><svg viewBox="0 0 24 24"><rect x="4" y="10" width="16" height="11" rx="2"/><path d="M8 10V7a4 4 0 1 1 8 0v3"/></svg></span>
+            <div class="section-kicker" id="auth-kicker">LECTURER ACCESS</div>
+            <h1 id="auth-title">Lecturer sign in</h1>
+            <p id="auth-description">Sign in to manage your classes and attendance reports.</p>
+            <div class="auth-field" id="auth-name-wrap" hidden><label class="field-label" for="auth-name">Full name</label><input id="auth-name" type="text" maxlength="100" autocomplete="name"></div>
+            <div class="auth-field"><label class="field-label" for="auth-email">Email address</label><input id="auth-email" type="email" maxlength="254" autocomplete="username" required></div>
+            <div class="auth-field" id="auth-invite-wrap" hidden><label class="field-label" for="auth-invite">Lecturer invitation code</label><input id="auth-invite" type="text" maxlength="40" autocomplete="off"></div>
+            <div class="auth-field"><label class="field-label" for="auth-password">Password</label><input id="auth-password" type="password" minlength="12" maxlength="128" autocomplete="current-password" required></div>
+            <div class="auth-field" id="auth-confirm-wrap" hidden><label class="field-label" for="auth-confirm">Confirm password</label><input id="auth-confirm" type="password" minlength="12" maxlength="128" autocomplete="new-password"></div>
+            <p class="auth-error" id="auth-error" role="status" aria-live="polite"></p>
+            <button class="button button-primary auth-submit" id="auth-submit" type="submit">Sign in</button>
+            <p class="auth-recovery-help" id="auth-recovery-help" hidden>Forgot your password? Ask the site owner for a single-use password recovery link.</p>
+            <p class="auth-admin-link" id="auth-admin-link"><a href="/admin">Administrator? Go to admin sign in</a></p>
+            <p class="auth-switch" id="auth-switch"></p>
+          </form>
+        </section>
+        <section id="lecturer-view" hidden>
+          <div class="page-heading">
+            <div>
+              <div class="eyebrow"><span class="eyebrow-dot"></span> LECTURER PORTAL</div>
+              <h1>Manage your classes and attendance.</h1>
+              <p>Choose a class, manage its roster, and review semester attendance reports.</p>
+            </div>
+            <div class="class-actions"><button class="button button-outline" id="edit-course" type="button">Edit class</button><button class="button button-primary" id="create-course" type="button">Add class</button></div>
+          </div>
+
+          <div class="course-picker" id="course-picker" hidden><label for="course-select">Selected class</label><select id="course-select"></select></div>
+          <section class="course-banner" aria-label="Selected class" id="course-banner" hidden>
+            <span class="course-icon"><svg viewBox="0 0 24 24"><path d="m3 9 9-5 9 5-9 5-9-5Z"/><path d="M7 11v5c3.3 2.7 6.7 2.7 10 0v-5M21 9v6"/></svg></span>
+            <div class="course-copy"><span class="course-code" id="course-code"></span><h2 id="course-name"></h2><span id="course-room"></span></div>
+            <span class="course-lecturer" id="course-lecturer"></span>
+            <span class="course-radius" id="course-radius"></span>
+          </section>
+          <section class="course-empty panel" id="course-empty"><span class="course-empty-mark">01</span><div><strong>Create your first class</strong><p>Add a class, venue, and roster. No sample classes or student records are preloaded.</p></div><button class="button button-primary" id="empty-setup" type="button">Create a class</button></section>
+
+          <section class="summary-grid" aria-label="Class attendance summary">
+            <article class="summary-card"><span class="summary-icon roster-icon"><svg viewBox="0 0 24 24"><circle cx="9" cy="8" r="3"/><path d="M3.5 20v-1.5a5.5 5.5 0 0 1 11 0V20M17 11a3 3 0 1 0-1.1-5.8M17 15a5 5 0 0 1 3.5 4.8V20"/></svg></span><span class="summary-label">ENROLLED STUDENTS</span><strong id="enrolled-count">—</strong><small>On this class roster</small></article>
+            <article class="summary-card"><span class="summary-icon present-icon"><svg viewBox="0 0 24 24"><path d="m5 12 4 4L19 6"/><circle cx="12" cy="12" r="9"/></svg></span><span class="summary-label">PRESENT TODAY</span><strong id="present-count">—</strong><small id="present-caption">Attendance for this session</small></article>
+            <article class="summary-card"><span class="summary-icon session-icon"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg></span><span class="summary-label">CHECK-IN SESSION</span><strong class="summary-state" id="session-state">Not started</strong><small id="session-caption">Generate a QR code to begin</small></article>
+          </section>
+
+          <section class="work-grid">
+            <article class="panel session-panel">
+              <div class="panel-heading"><div><div class="section-kicker">LIVE ATTENDANCE</div><h2 id="session-heading">Start a class check-in</h2><p id="session-description">Choose how long the student link should stay open, then display its QR code.</p></div><span class="live-pill" id="live-pill"><i></i> NO SESSION</span></div>
+              <div class="session-create-controls" id="session-create-controls"><label for="session-duration">Link expires after</label><div class="session-duration-field"><input id="session-duration" type="number" min="1" max="480" step="1" value="10" inputmode="numeric"><select id="session-duration-unit" aria-label="Session duration unit"><option value="minutes">minutes</option><option value="hours">hours</option></select><button class="button button-primary" id="generate-session" type="button" disabled>Generate QR</button></div><small>Set a duration in minutes or hours, up to 8 hours.</small></div>
+              <div class="qr-content" id="qr-content" hidden>
+                <div class="qr-frame"><div id="qr-code" aria-label="Session QR code"></div></div>
+                <div class="qr-meta"><span class="qr-label">STUDENTS SCAN TO CHECK IN</span><strong id="qr-code-label"></strong><p id="qr-expires"></p><div class="expiry-edit"><label for="extend-duration">Update expiry</label><div><input id="extend-duration" type="number" min="1" max="480" step="1" value="10" inputmode="numeric"><select id="extend-duration-unit" aria-label="Updated duration unit"><option value="minutes">minutes</option><option value="hours">hours</option></select><button class="button button-outline" id="update-expiry" type="button">Update</button></div></div><button class="text-link" id="copy-link" type="button"><svg viewBox="0 0 24 24"><rect x="8" y="8" width="12" height="12" rx="2"/><path d="M16 8V5a1 1 0 0 0-1-1H5a1 1 0 0 0-1 1v10a1 1 0 0 0 1 1h3"/></svg> Copy student check-in link</button><button class="end-session" id="end-session" type="button">End attendance session</button></div>
+              </div>
+              <div class="qr-empty" id="qr-empty"><span class="qr-empty-icon"><svg viewBox="0 0 24 24"><path d="M4 8V5a1 1 0 0 1 1-1h3M16 4h3a1 1 0 0 1 1 1v3M20 16v3a1 1 0 0 1-1 1h-3M8 20H5a1 1 0 0 1-1-1v-3M8 8h3v3H8zM15 8h1M15 12h2M8 15h3v3H8zM16 16h2v2h-2z"/></svg></span><strong>Your QR code will appear here</strong><span>Generate a session when you’re ready to take attendance.</span></div>
+              <div class="panel-footnote"><svg viewBox="0 0 24 24"><path d="M12 3 19 6v5c0 4.5-2.9 8-7 10-4.1-2-7-5.5-7-10V6l7-3Z"/><path d="m9 12 2 2 4-4"/></svg> Policy: one check-in per rostered student per session. Check-in closes when this link expires or is ended; late submissions are not accepted. The student device must report GPS accuracy of 150 m or better and be within the class radius. Location is device-reported and is not proof against spoofing.</div>
+            </article>
+
+            <article class="panel roster-panel" id="roster-section">
+              <div class="roster-heading"><div><div class="section-kicker">YOUR CLASS</div><h2>Student roster <span id="roster-count" class="count-pill">0</span></h2></div><button class="button button-outline add-student" id="add-student" type="button"><svg viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg> Add student</button></div>
+              <label class="search-box" for="roster-search"><svg viewBox="0 0 24 24"><circle cx="10.8" cy="10.8" r="6.8"/><path d="m16 16 4.5 4.5"/></svg><input id="roster-search" type="search" placeholder="Search by name or registration no."></label>
+              <div class="roster-scroll"><table><thead><tr><th>STUDENT</th><th>REGISTRATION NO.</th><th>STATUS</th><th aria-label="Actions"></th></tr></thead><tbody id="roster-body"></tbody></table><div class="empty-roster" id="empty-roster" hidden><strong>No students on this roster yet</strong><span>Add students to prepare this class for attendance.</span></div></div>
+              <div class="roster-footer"><span id="roster-footer-count"></span><button class="text-link" id="refresh-roster" type="button"><svg viewBox="0 0 24 24"><path d="M20 7v5h-5M4 17v-5h5"/><path d="M6 9a7 7 0 0 1 12-2M6 15a7 7 0 0 0 12 2"/></svg> Refresh</button></div>
+            </article>
+          </section>
+          <section class="panel reports-panel" id="reports-panel">
+            <div class="reports-heading"><div><div class="section-kicker">SEMESTER SUMMARY</div><h2>Attendance report</h2><p>Choose the semester dates. Percentages use attended sessions divided by sessions held in this class during that period.</p></div><span class="report-mark"><svg viewBox="0 0 24 24"><path d="M5 3h10l4 4v14H5z"/><path d="M14 3v5h5M8 12h8M8 16h8"/></svg></span></div>
+            <div class="report-controls"><label>Semester starts<input id="report-start" type="date" required></label><label>Semester ends<input id="report-end" type="date" required></label><button class="button button-outline" id="preview-report" type="button">Calculate percentages</button><span class="report-session-count" id="report-session-count">Choose a date range</span><button class="button button-primary" id="export-excel" type="button" disabled>Download Excel</button><button class="button button-outline" id="export-pdf" type="button" disabled>Download PDF</button></div>
+            <p class="report-error" id="report-error" role="status" aria-live="polite"></p>
+            <div class="report-table-wrap" id="report-table-wrap" hidden><table class="report-table"><thead><tr><th>STUDENT</th><th>REGISTRATION NO.</th><th>ATTENDED</th><th>SESSIONS HELD</th><th>ATTENDANCE</th></tr></thead><tbody id="report-body"></tbody></table></div>
+          </section>
+          <section class="panel audit-panel" id="audit-panel" hidden>
+            <div class="reports-heading"><div><div class="section-kicker">ACCOUNTABILITY</div><h2>Attendance audit trail</h2><p>Recent check-ins, lecturer corrections, and report exports for this class. Corrections require a reason and are retained in the audit history.</p></div><button class="button button-outline" id="refresh-audit" type="button">Refresh</button></div>
+            <div class="audit-table-wrap"><table class="audit-table"><thead><tr><th>WHEN</th><th>EVENT</th><th>ACTOR</th><th>DETAILS / ACTION</th></tr></thead><tbody id="audit-body"></tbody></table><p class="audit-empty" id="audit-empty" hidden>No attendance activity has been recorded yet.</p></div>
+          </section>
+          <div class="notice"><span class="notice-mark">i</span><span><strong>Privacy note.</strong> Face identity matching is not configured. Attendance photos are not uploaded or saved. Protect exported student records according to your institution’s policy.</span></div>
+          <footer class="footer"><span>Presence Campus · Lecturer portal</span><a href="https://linktr.ee/eagletechhq" target="_blank" rel="noopener noreferrer">Made by Eagletech HQ</a><span>Student links expire automatically</span></footer>
+        </section>
+      </main>
+    </div>
+    <dialog class="add-dialog" id="add-dialog" aria-labelledby="add-dialog-title">
+      <form id="add-student-form" method="dialog">
+        <div class="dialog-top"><div><div class="section-kicker">CLASS ROSTER</div><h2 id="add-dialog-title">Add a student</h2></div><button class="dialog-close" id="close-add-dialog" type="button" aria-label="Close dialog">×</button></div>
+        <label class="field-label" for="new-student-id">Registration number</label><input id="new-student-id" class="dialog-input" required minlength="4" maxlength="16" placeholder="e.g. 20240006">
+        <label class="field-label" for="new-student-name">Student name</label><input id="new-student-name" class="dialog-input" required maxlength="100" placeholder="Full name">
+        <label class="field-label" for="new-student-program">Programme</label><input id="new-student-program" class="dialog-input" maxlength="120" placeholder="e.g. BSc Computer Science · Year 2">
+        <p class="dialog-error" id="dialog-error" role="status" aria-live="polite"></p>
+        <div class="dialog-actions"><button class="button button-outline" id="cancel-add" type="button">Cancel</button><button class="button button-primary" type="submit">Add to roster</button></div>
+      </form>
+    </dialog>
+    <dialog class="course-dialog" id="course-dialog" aria-labelledby="course-dialog-title">
+      <form id="course-form">
+        <div class="dialog-top"><div><div class="section-kicker">CLASS SETUP</div><h2 id="course-dialog-title">Set up your class</h2></div><button class="dialog-close" id="close-course-dialog" type="button" aria-label="Close dialog">×</button></div>
+        <label class="field-label" for="course-name-input">Class name</label><input id="course-name-input" class="dialog-input" required maxlength="120" placeholder="e.g. Introduction to Computing">
+        <div class="course-form-row"><span><label class="field-label" for="course-code-input">Course code</label><input id="course-code-input" class="dialog-input" required maxlength="30" placeholder="e.g. COMP 101"></span><span><label class="field-label" for="course-lecturer-input">Lecturer name</label><input id="course-lecturer-input" class="dialog-input" required maxlength="100" placeholder="Your name"></span></div>
+        <label class="field-label" for="course-room-input">Lecture venue / room</label><input id="course-room-input" class="dialog-input" required maxlength="120" placeholder="Building and room">
+        <p class="venue-label">Lecture location <span>Use your current location while in the room, or enter coordinates.</span></p>
+        <div class="course-form-row coordinate-row"><span><label class="field-label" for="course-latitude-input">Latitude</label><input id="course-latitude-input" class="dialog-input" type="number" step="any" min="-90" max="90" required placeholder="e.g. 6.5244"></span><span><label class="field-label" for="course-longitude-input">Longitude</label><input id="course-longitude-input" class="dialog-input" type="number" step="any" min="-180" max="180" required placeholder="e.g. 3.3792"></span></div>
+        <div class="course-form-row"><span><label class="field-label" for="course-radius-input">Check-in radius (metres)</label><input id="course-radius-input" class="dialog-input" type="number" min="20" max="2000" step="10" value="100" required></span><span class="geo-action-wrap"><span></span><button class="button button-outline" id="use-current-location" type="button">Use current location</button></span></div>
+        <p class="dialog-error" id="course-error" role="status" aria-live="polite"></p>
+        <div class="dialog-actions"><button class="button button-outline" id="cancel-course" type="button">Cancel</button><button class="button button-primary" type="submit">Save class</button></div>
+      </form>
+    </dialog>
+    <div class="toast" id="toast" role="status" aria-live="polite"></div>
+  </body>
+</html>
